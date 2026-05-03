@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SWIPE-R</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --color-washed-black: #1a1a1a;
+            --color-pure-white: #ffffff;
+            --color-pearl: #f7f7f3;
+            --color-beige: #f0f0ec;
+            --color-ink-black: #000000;
+            --color-concrete: #d4d4d0;
+            --color-dim-grey: #6d6868;
+            --color-silver-mist: #b3b3b3;
+            --color-royal-blue: #1009f6;
+            --color-energy-gold: #ffba09;
+            --radius-cards: 24px;
+            --radius-images: 40px;
+            --radius-buttons: 999px;
+        }
+        body {
+            font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+            color: var(--color-washed-black);
+            background: var(--color-pure-white);
+        }
+        .page-shell { max-width: 1200px; margin: 0 auto; padding: 24px; }
+        .topbar {
+            position: sticky; top: 0; z-index: 30;
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--color-concrete);
+        }
+        .app-main { padding-top: 8px; }
+        .brand-logo {
+            display: block;
+            height: 42px;
+            width: auto;
+        }
+        .mode-split {
+            display: inline-flex;
+            border-radius: var(--radius-buttons);
+            border: 1px solid var(--color-concrete);
+            overflow: hidden;
+            background: var(--color-beige);
+        }
+        .mode-split a {
+            padding: 7px 14px;
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1.2;
+            color: var(--color-dim-grey);
+            white-space: nowrap;
+        }
+        .mode-split a:hover {
+            color: var(--color-washed-black);
+            background: rgba(255, 255, 255, 0.6);
+        }
+        .mode-split a.is-on {
+            background: var(--color-royal-blue);
+            color: var(--color-pure-white);
+        }
+        .mode-split a.is-on:hover { color: var(--color-pure-white); }
+        .app-alert-error:not(:has(> p)) { display: none; margin: 0; padding: 0; border: none; }
+        body.app-body { padding-bottom: env(safe-area-inset-bottom, 0px); }
+        .nav-pill {
+            border: 1px solid var(--color-washed-black);
+            border-radius: var(--radius-buttons);
+            padding: 10px 16px;
+            font-size: 14px;
+            line-height: 1.2;
+            transition: all 0.15s ease;
+            background: transparent;
+        }
+        .nav-pill:hover { background: var(--color-beige); }
+        .nav-pill.active {
+            background: var(--color-energy-gold);
+            color: var(--color-ink-black);
+            border-color: var(--color-ink-black);
+        }
+        button.nav-pill { font: inherit; cursor: pointer; }
+        .card {
+            border-radius: var(--radius-cards);
+            padding: 24px;
+            border: 1px solid var(--color-concrete);
+            background: var(--color-pure-white);
+        }
+        .card-royal {
+            border-radius: var(--radius-cards);
+            padding: 24px;
+            background: var(--color-royal-blue);
+            color: var(--color-pure-white);
+        }
+        .card-gold {
+            border-radius: var(--radius-cards);
+            padding: 24px;
+            background: var(--color-energy-gold);
+            color: var(--color-ink-black);
+        }
+        .card-pearl {
+            border-radius: var(--radius-cards);
+            padding: 24px;
+            background: var(--color-pearl);
+            border: 1px solid var(--color-concrete);
+        }
+        .btn-primary {
+            display: inline-block;
+            border-radius: var(--radius-buttons);
+            background: var(--color-energy-gold);
+            color: var(--color-ink-black);
+            border: 1px solid var(--color-ink-black);
+            padding: 14px 24px;
+            font-weight: 700;
+            font-size: 14px;
+            line-height: 1.2;
+            transition: transform 0.12s ease;
+        }
+
+        .btn-secondary {
+            display: inline-block;
+            border-radius: var(--radius-buttons);
+            background: var(--color-pure-white);
+            color: var(--color-ink-black);
+            border: 1px solid var(--color-ink-black);
+            padding: 14px 24px;
+            font-weight: 700;
+            font-size: 14px;
+            line-height: 1.2;
+            transition: transform 0.12s ease;
+        }
+        .btn-secondary:hover { transform: translateY(-1px); }
+        
+        .btn-primary:hover { transform: translateY(-1px); }
+        .poster-frame {
+            border-radius: var(--radius-images);
+            overflow: hidden;
+            border: 1px solid var(--color-concrete);
+            background: var(--color-beige);
+        }
+        input[type="text"], input[type="password"], input[type="email"], select, textarea {
+            width: 100%;
+            border-radius: 4.375px;
+            border: 1px solid var(--color-silver-mist);
+            background: var(--color-beige);
+            padding: 9px 14px;
+            font-size: 14px;
+            color: var(--color-washed-black);
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: 2px solid var(--color-royal-blue);
+            outline-offset: 1px;
+        }
+        .filter-tab.active {
+            background: var(--color-royal-blue);
+            color: var(--color-pure-white);
+            border-color: var(--color-royal-blue);
+        }
+        .poster-shell {
+            position: relative;
+            width: 100%;
+            border-radius: var(--radius-images);
+            overflow: hidden;
+        }
+        .poster-shell--thumb {
+            width: 4.75rem;
+            min-width: 4.75rem;
+            align-self: flex-start;
+        }
+        .poster-shell--thumb .poster-frame {
+            border-radius: 12px;
+            aspect-ratio: 2 / 3;
+            min-height: 0;
+            max-height: 7rem;
+        }
+        .poster-shell--hero .poster-frame {
+            aspect-ratio: 2 / 3;
+            max-height: min(70vh, 520px);
+            margin: 0 auto;
+            max-width: 340px;
+        }
+        a.poster-tmdb-link {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            outline-offset: 4px;
+        }
+        a.poster-tmdb-link:focus-visible {
+            outline: 2px solid var(--color-royal-blue);
+            border-radius: var(--radius-images);
+        }
+        .poster-shell--thumb a.poster-tmdb-link:focus-visible {
+            border-radius: 12px;
+        }
+        .poster-fallback-placeholder {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            aspect-ratio: 2 / 3;
+            width: 100%;
+            padding: 1rem;
+            font-size: 13px;
+            line-height: 1.4;
+            color: var(--color-dim-grey);
+            background-color: var(--color-beige);
+            background-image: repeating-linear-gradient(
+                -45deg, transparent, transparent 8px,
+                rgba(212, 212, 208, 0.45) 8px,
+                rgba(212, 212, 208, 0.45) 9px
+            );
+        }
+        .poster-shell--thumb .poster-fallback-placeholder { font-size: 10px; padding: 0.35rem; }
+        .poster-shell--thumb .poster-image { opacity: 1 !important; }
+        .poster-fallback-placeholder.poster-fallback--visible { display: flex; }
+        .btn-tomato {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            border-radius: var(--radius-buttons);
+            border: 2px solid #b42318;
+            color: #7f1d1d;
+            background: #fee2e2;
+            padding: 14px 20px;
+            font-weight: 700;
+            font-size: 14px;
+            line-height: 1.2;
+        }
+        .btn-tomato:hover { background: #fecaca; }
+        .btn-kiss {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+        }
+        .icon-choice {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 4rem;
+            height: 4rem;
+            border-radius: 50%;
+            background: rgba(16, 9, 246, 0.08);
+            color: var(--color-royal-blue);
+            font-size: 1.75rem;
+        }
+        .icon-choice--tv { background: rgba(16, 9, 246, 0.12); }
+        .home-hero .icon-choice { width: 5.5rem; height: 5.5rem; font-size: 2.25rem; }
+        .home-hero .btn-primary { font-size: 1.125rem; padding: 18px 32px; }
+        .btn-ico { font-size: 1.05rem; }
+    </style>
+</head>
+<body class="app-body">
+    <header class="topbar">
+        <nav class="page-shell py-3">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div class="flex flex-wrap items-center gap-4 lg:gap-8">
+                    <a href="{% url 'index' %}" class="inline-flex items-center" aria-label="Swipe Recommender">
+                        <img src="https://res.cloudinary.com/dsy30p7gf/image/upload/v1777814027/swiperlogo_ituxv2.png" alt="Swipe Recommender" class="brand-logo" loading="eager" decoding="async">
+                    </a>
+                    {% if user.is_authenticated and active_media_type %}
+                        {% firstof app_shell_route "swipe" as mode_link_base %}
+                        <div class="mode-split shrink-0" role="toolbar" aria-label="Tipo de contenido">
+                            <a href="{% url mode_link_base %}?type=movie" class="{% if active_media_type == 'movie' %}is-on{% endif %}"><i class="fa-solid fa-film mr-1 text-xs opacity-80" aria-hidden="true"></i> Películas</a>
+                            <a href="{% url mode_link_base %}?type=tv" class="{% if active_media_type == 'tv' %}is-on{% endif %}"><i class="fa-solid fa-tv mr-1 text-xs opacity-80" aria-hidden="true"></i> Series</a>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="flex flex-wrap items-center gap-2 lg:justify-end">
+                    {% if user.is_authenticated %}
+                        {% if active_media_type %}
+                            <a href="{% url 'swipe' %}?type={{ active_media_type }}" class="nav-pill {% if request.resolver_match and request.resolver_match.url_name == 'swipe' %}active{% endif %}"><i class="fa-solid fa-arrows-left-right mr-1.5 text-xs opacity-75" aria-hidden="true"></i> Votar</a>
+                            <a href="{% url 'recommendations' %}?type={{ active_media_type }}" class="nav-pill {% if '/recommendations' in request.path %}active{% endif %}"><i class="fa-solid fa-wand-magic-sparkles mr-1.5 text-xs opacity-75" aria-hidden="true"></i> Recomendaciones</a>
+                            <a href="{% url 'history' %}?type={{ active_media_type }}" class="nav-pill {% if '/history' in request.path %}active{% endif %}"><i class="fa-regular fa-clock mr-1.5 text-xs opacity-75" aria-hidden="true"></i> Historial</a>
+                        {% else %}
+                            <a href="{% url 'index' %}#elegir" class="nav-pill {% if request.resolver_match and request.resolver_match.url_name == 'index' %}active{% endif %}"><i class="fa-solid fa-house mr-1.5 text-xs opacity-75" aria-hidden="true"></i> Inicio</a>
+                        {% endif %}
+                        <form action="{% url 'logout' %}" method="post" class="inline-flex">
+                            {% csrf_token %}
+                            <button type="submit" class="nav-pill active">Salir</button>
+                        </form>
+                    {% else %}
+                        <a href="{% url 'index' %}#elegir" class="nav-pill {% if request.resolver_match and request.resolver_match.url_name == 'index' %}active{% endif %}"><i class="fa-solid fa-house mr-1.5 text-xs opacity-75" aria-hidden="true"></i> Inicio</a>
+                        <a href="{% url 'login' %}?next={% url 'index' %}" class="nav-pill"><i class="fa-solid fa-wand-magic-sparkles mr-1.5 text-xs opacity-75" aria-hidden="true"></i> Recomendaciones</a>
+                        <a href="{% url 'login' %}?next={% url 'index' %}" class="nav-pill"><i class="fa-regular fa-clock mr-1.5 text-xs opacity-75" aria-hidden="true"></i> Historial</a>
+                        <a href="{% url 'login' %}" class="nav-pill active">Entrar</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% if messages %}
+                <div class="app-alert-error" role="alert">
+                    {% for message in messages %}
+                        {% if message.level_tag == 'error' %}<p>{{ message }}</p>{% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </nav>
+    </header>
+    <main class="page-shell app-main">
+        {% block content %}{% endblock %}
+    </main>
+    <script>
+        (function () {
+            function bindPosterShells(root) {
+                root.querySelectorAll(".poster-shell").forEach(function (shell) {
+                    if (shell.dataset.posterBound === "1") return;
+                    shell.dataset.posterBound = "1";
+                    var img = shell.querySelector("[data-poster-image]");
+                    var fb = shell.querySelector("[data-poster-fallback]");
+                    function markLoaded() { shell.classList.add("poster-loaded"); }
+                    function showFallback() {
+                        if (img) img.style.display = "none";
+                        if (fb) fb.classList.add("poster-fallback--visible");
+                        markLoaded();
+                    }
+                    if (!img) {
+                        if (fb) fb.classList.add("poster-fallback--visible");
+                        markLoaded();
+                        return;
+                    }
+                    img.addEventListener("error", showFallback, { once: true });
+                    img.addEventListener("load", markLoaded, { once: true });
+                    if (img.complete) {
+                        if (img.naturalWidth === 0) showFallback();
+                        else markLoaded();
+                    }
+                });
+            }
+            bindPosterShells(document);
+            window.bindPosterShells = bindPosterShells;
+        })();
+    </script>
+    {% block page_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,31 @@
+{% extends "swiperecommenderapp/layout.html" %}
+
+{% block content %}
+{% if page_obj %}
+<div class="space-y-3">
+    {% for swipe in page_obj %}
+    <article class="card flex flex-row gap-4">
+        <div class="poster-shell poster-shell--thumb">
+            {% include "swiperecommenderapp/includes/poster_thumb.html" with media_item=swipe.media_item %}
+        </div>
+        <div class="min-w-0 flex-1">
+            <p class="font-semibold">{{ swipe.media_item.title }}</p>
+            <p class="text-xs text-slate-500">{{ swipe.media_item.get_media_type_display }}, {{ swipe.created_at|date:"d/m/Y H:i" }}</p>
+            <p class="mt-2 flex items-center gap-2 text-sm">
+                {% if swipe.decision == "like" %}
+                    <span class="inline-flex items-center gap-1.5 text-green-800"><i class="fa-solid fa-heart text-green-600" aria-hidden="true"></i> Me gusta</span>
+                {% else %}
+                    <span class="inline-flex items-center gap-1.5 text-red-900"><i class="fa-solid fa-circle-xmark text-red-700" aria-hidden="true"></i> No me gusta</span>
+                {% endif %}
+            </p>
+        </div>
+    </article>
+    {% endfor %}
+</div>
+{% else %}
+<div class="rounded-[var(--radius-cards)] border border-solid border-[var(--color-concrete)] bg-[var(--color-pearl)] px-5 py-8 text-center text-sm text-slate-600">
+    <p>Aún no hay votos en esta lista.</p>
+    <a href="{% url 'swipe' %}?type={{ selected_type }}" class="btn-primary mt-4 inline-block text-xs">Ir a votar</a>
+</div>
+{% endif %}
+{% endblock %}

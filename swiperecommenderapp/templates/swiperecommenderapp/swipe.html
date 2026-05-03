@@ -1,0 +1,122 @@
+{% extends "swiperecommenderapp/layout.html" %}
+
+{% block content %}
+<style>
+    .deck-stage { position: relative; margin-top: 0; perspective: 1200px; }
+    .deck-shadow-card {
+        position: absolute; inset: 10px 12px -10px 12px;
+        border-radius: var(--radius-cards);
+        background: var(--color-pearl);
+        border: 1px solid var(--color-concrete);
+        transform: scale(0.985) translateY(8px);
+        z-index: 0;
+    }
+    .swipe-deck {
+        position: relative; z-index: 1;
+        transform-origin: center center;
+        transition: transform 220ms ease, opacity 220ms ease, filter 220ms ease;
+        will-change: transform, opacity;
+    }
+    .swipe-deck.swipe-out.swipe-right {
+        transform: translateX(120px) rotate(7deg) scale(0.98);
+        opacity: 0; filter: blur(1px);
+    }
+    .swipe-deck.swipe-out.swipe-left {
+        transform: translateX(-120px) rotate(-7deg) scale(0.98);
+        opacity: 0; filter: blur(1px);
+    }
+    .poster-skeleton {
+        position: absolute; inset: 0;
+        border-radius: var(--radius-images);
+        background: linear-gradient(100deg, rgba(212,212,208,0.25) 20%, rgba(247,247,243,0.9) 40%, rgba(212,212,208,0.25) 60%);
+        background-size: 220% 100%;
+        animation: swipe-shimmer 1.2s infinite linear;
+    }
+    .poster-shell--hero .poster-skeleton { border-radius: var(--radius-images); }
+    .poster-shell.poster-loaded .poster-skeleton { opacity: 0; pointer-events: none; }
+    .poster-shell.poster-loaded .poster-frame img.poster-image { opacity: 1; }
+    .poster-frame img.poster-image { opacity: 0; transition: opacity 180ms ease; width: 100%; height: 100%; object-fit: cover; display: block; }
+    .vote-buttons .btn-primary:active, .vote-buttons .btn-tomato:active { transform: scale(0.98); }
+    @keyframes swipe-shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+</style>
+{% if candidate %}
+<div class="deck-stage mx-auto max-w-md pb-8">
+    <div class="deck-shadow-card hidden sm:block"></div>
+    <article id="swipe-deck" class="card swipe-deck px-6 pb-6 pt-6">
+        <div class="poster-shell poster-shell--hero mx-auto mb-6 w-full">
+            <div class="poster-skeleton" aria-hidden="true"></div>
+            {% if candidate.tmdb_page_url %}
+            <a href="{{ candidate.tmdb_page_url }}" class="poster-tmdb-link block w-full max-w-[340px] mx-auto" target="_blank" rel="noopener noreferrer" aria-label="Ver «{{ candidate.title }}» en The Movie Database (se abre en una pestaña nueva)">
+            {% endif %}
+            <div class="poster-frame border border-solid border-[var(--color-concrete)] bg-[var(--color-beige)]">
+                {% if candidate.poster_url %}
+                    <img src="{{ candidate.poster_url }}" alt="{{ candidate.title }}" class="poster-image" loading="eager" fetchpriority="high" decoding="async" data-poster-image>
+                    <div class="poster-fallback-placeholder" data-poster-fallback>
+                        <i class="fa-regular fa-image text-2xl text-slate-400" aria-hidden="true"></i>
+                        <span class="mt-2 block text-xs">Imagen no disponible</span>
+                    </div>
+                {% else %}
+                    <div class="poster-fallback-placeholder poster-fallback--visible" data-poster-fallback>
+                        <i class="fa-regular fa-image text-2xl text-slate-400" aria-hidden="true"></i>
+                        <span class="mt-2 block text-xs text-slate-500">Sin póster</span>
+                    </div>
+                {% endif %}
+            </div>
+            {% if candidate.tmdb_page_url %}
+            </a>
+            {% endif %}
+        </div>
+        <div class="text-center">
+            <h2 class="text-xl font-semibold">{{ candidate.title }}</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ candidate.get_media_type_display }}{% if candidate.release_year %}, {{ candidate.release_year }}{% endif %}</p>
+            <p class="mt-4 line-clamp-5 text-left text-sm leading-relaxed text-slate-700">{{ candidate.overview|default:"Sin descripción disponible." }}</p>
+        </div>
+        <form method="post" class="vote-buttons mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center" id="swipe-form">
+            {% csrf_token %}
+            <input type="hidden" name="media_item_id" value="{{ candidate.id }}">
+            <input type="hidden" name="selected_type" value="{{ selected_type }}">
+            <button type="submit" name="decision" value="dislike" class="btn-tomato order-2 flex-1 sm:order-1 sm:max-w-[200px]">
+                <i class="fa-solid fa-circle-xmark btn-ico" aria-hidden="true"></i> No me gusta
+            </button>
+            <button type="submit" name="decision" value="like" class="btn-primary btn-kiss order-1 flex-1 sm:order-2 sm:max-w-[200px]">
+                <i class="fa-solid fa-heart btn-ico" aria-hidden="true"></i> Me gusta
+            </button>
+        </form>
+    </article>
+</div>
+{% else %}
+<div class="mx-auto max-w-md rounded-[var(--radius-cards)] border border-solid border-[var(--color-concrete)] bg-[var(--color-pearl)] px-5 py-6 text-center text-sm text-slate-600">
+    <p>No hay más candidatos {% if selected_type == 'movie' %}en películas{% else %}en series{% endif %} por ahora.</p>
+    <a href="{% url 'index' %}#elegir" class="btn-primary mt-4 inline-block text-xs">Inicio</a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+(function () {
+    var form = document.getElementById("swipe-form");
+    var deck = document.getElementById("swipe-deck");
+    if (!form || !deck) return;
+    form.addEventListener("submit", function (event) {
+        if (form.dataset.submitting === "1") return;
+        event.preventDefault();
+        form.dataset.submitting = "1";
+        var submitter = event.submitter;
+        if (!submitter || !submitter.value) {
+            form.dataset.submitting = "0";
+            form.submit();
+            return;
+        }
+        var decisionInput = document.createElement("input");
+        decisionInput.type = "hidden";
+        decisionInput.name = "decision";
+        decisionInput.value = submitter.value;
+        form.appendChild(decisionInput);
+        var direction = submitter.value === "like" ? "right" : "left";
+        deck.classList.add("swipe-out", direction === "right" ? "swipe-right" : "swipe-left");
+        setTimeout(function () { form.submit(); }, 220);
+    });
+})();
+</script>
+{% endblock %}

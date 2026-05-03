@@ -1,0 +1,28 @@
+{% extends "swiperecommenderapp/layout.html" %}
+
+{% block content %}
+{% if recommendation_list %}
+<div class="grid gap-4 md:grid-cols-2">
+    {% for snapshot in recommendation_list %}
+    <article class="card flex gap-4">
+        <div class="poster-shell poster-shell--thumb">
+            {% include "swiperecommenderapp/includes/poster_thumb.html" with media_item=snapshot.media_item %}
+        </div>
+        <div class="min-w-0 flex-1">
+            <h2 class="font-semibold leading-snug">{{ snapshot.media_item.title }}</h2>
+            <p class="text-xs text-slate-500">
+                {% if snapshot.media_item.release_year %}{{ snapshot.media_item.get_media_type_display }}, {{ snapshot.media_item.release_year }}{% else %}{{ snapshot.media_item.get_media_type_display }}{% endif %}
+            </p>
+            <p class="mt-2 text-sm">{{ snapshot.media_item.overview|default:"Sin descripción disponible."|truncatechars:200 }}</p>
+            <p class="mt-2 text-xs text-indigo-700">{{ snapshot.reason }}</p>
+        </div>
+    </article>
+    {% endfor %}
+</div>
+{% else %}
+<div class="rounded-[var(--radius-cards)] border border-solid border-[var(--color-concrete)] bg-[var(--color-pearl)] px-5 py-8 text-center text-sm text-slate-600">
+    <p>Vota más títulos en este modo para poder sugerirte cosas.</p>
+    <a href="{% url 'swipe' %}?type={{ selected_type }}" class="btn-primary mt-4 inline-block text-xs">Ir a votar</a>
+</div>
+{% endif %}
+{% endblock %}

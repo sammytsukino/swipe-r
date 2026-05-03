@@ -1,0 +1,25 @@
+{% extends "swiperecommenderapp/layout.html" %}
+
+{% block content %}
+<div class="flex min-h-[calc(100vh-140px)] items-center justify-center py-8">
+    <section class="mx-auto w-full max-w-md card-pearl">
+        <h1 class="mb-2 text-3xl font-bold">Bienvenido de nuevo</h1>
+        <p class="mb-6 text-sm text-slate-600">Accede para continuar con tu sesión de recomendaciones.</p>
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label for="{{ form.username.id_for_label }}" class="mb-1 block text-sm font-semibold">Usuario</label>
+                {{ form.username }}
+            </div>
+            <div>
+                <label for="{{ form.password.id_for_label }}" class="mb-1 block text-sm font-semibold">Contraseña</label>
+                {{ form.password }}
+            </div>
+            {% if form.non_field_errors %}
+                <div class="text-sm text-red-700">{{ form.non_field_errors }}</div>
+            {% endif %}
+            <button type="submit" class="btn-primary w-full text-center">Entrar</button>
+        </form>
+    </section>
+</div>
+{% endblock %}
