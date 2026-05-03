@@ -1,5 +1,6 @@
 from collections import Counter
 
+from swiperecommenderapp.clients import ExternalAPIError, YouTubeClient
 from swiperecommenderapp.models import MediaItem, RecommendationSnapshot, UserSwipe
 from swiperecommenderapp.services.catalog import CatalogService
 
@@ -7,6 +8,7 @@ from swiperecommenderapp.services.catalog import CatalogService
 class RecommendationService:
     def __init__(self):
         self.catalog_service = CatalogService()
+        self.youtube_client = YouTubeClient()
 
     def record_swipe(self, user, media_item, decision):
         swipe, _ = UserSwipe.objects.update_or_create(
@@ -26,6 +28,7 @@ class RecommendationService:
         if not candidate:
             candidate = queryset.order_by("-popularity", "title").first()
         if candidate:
+            self._ensure_trailer_url(candidate)
             return candidate
 
         fetched_items = self.catalog_service.fetch_and_store_candidates(limit=40)
@@ -34,8 +37,25 @@ class RecommendationService:
                 if media_type in {MediaItem.TYPE_MOVIE, MediaItem.TYPE_TV}:
                     if item.media_type != media_type:
                         continue
+                self._ensure_trailer_url(item)
                 return item
         return None
+
+    def _ensure_trailer_url(self, media_item):
+        if media_item.youtube_trailer_url:
+            return media_item.youtube_trailer_url
+        try:
+            trailer_url = self.youtube_client.find_trailer_url(
+                title=media_item.title,
+                media_type=media_item.media_type,
+                release_year=media_item.release_year,
+            )
+        except ExternalAPIError:
+            return ""
+        if trailer_url:
+            media_item.youtube_trailer_url = trailer_url
+            media_item.save(update_fields=["youtube_trailer_url", "updated_at"])
+        return trailer_url
 
     def build_recommendations(self, user, limit=10, media_type=None):
         likes = UserSwipe.objects.filter(user=user, decision=UserSwipe.DECISION_LIKE)

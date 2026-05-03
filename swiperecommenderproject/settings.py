@@ -112,3 +112,6 @@ TVDB_BASE_URL = env("TVDB_BASE_URL", default="https://api4.thetvdb.com/v4")
 
 RPDB_API_KEY = env("RPDB_API_KEY", default="")
 RPDB_BASE_URL = env("RPDB_BASE_URL", default="https://api.ratingposterdb.com")
+
+YOUTUBE_API_KEY = env("YOUTUBE_API_KEY", default="")
+YOUTUBE_BASE_URL = env("YOUTUBE_BASE_URL", default="https://www.googleapis.com/youtube/v3")

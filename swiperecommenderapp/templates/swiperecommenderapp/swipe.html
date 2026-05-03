@@ -70,6 +70,11 @@
             <h2 class="text-xl font-semibold">{{ candidate.title }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ candidate.get_media_type_display }}{% if candidate.release_year %}, {{ candidate.release_year }}{% endif %}</p>
             <p class="mt-4 line-clamp-5 text-left text-sm leading-relaxed text-slate-700">{{ candidate.overview|default:"Sin descripción disponible." }}</p>
+            {% if candidate.youtube_trailer_url %}
+            <a href="{{ candidate.youtube_trailer_url }}" class="btn-secondary mt-5 inline-block text-sm" target="_blank" rel="noopener noreferrer" aria-label="Ver tráiler de {{ candidate.title }} en YouTube (se abre en una pestaña nueva)">
+                <i class="fa-brands fa-youtube mr-1.5 text-red-600" aria-hidden="true"></i> Ver tráiler
+            </a>
+            {% endif %}
         </div>
         <form method="post" class="vote-buttons mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center" id="swipe-form">
             {% csrf_token %}

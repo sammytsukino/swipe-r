@@ -1,15 +1,15 @@
 from django.db import transaction
 from django.utils.text import slugify
 
-from swiperecommenderapp.clients import ExternalAPIError, RPDBClient, TMDBClient, TVDBClient
+from swiperecommenderapp.clients import ExternalAPIError, RPDBClient, TMDBClient, YouTubeClient
 from swiperecommenderapp.models import MediaItem
 
 
 class CatalogService:
     def __init__(self):
         self.tmdb_client = TMDBClient()
-        self.tvdb_client = TVDBClient()
         self.rpdb_client = RPDBClient()
+        self.youtube_client = YouTubeClient()
 
     def fetch_and_store_candidates(self, query=None, limit=40):
         normalized_items = []
@@ -17,10 +17,6 @@ class CatalogService:
         normalized_items.extend(
             [TMDBClient.normalize_item(item) for item in self._safe_fetch_tmdb(limit=limit)]
         )
-        for item in self._safe_fetch_tvdb(query=query, limit=limit):
-            normalized = TVDBClient.normalize_item(item)
-            if normalized:
-                normalized_items.append(normalized)
 
         deduplicated = self._deduplicate_items(normalized_items)[:limit]
         return self._upsert_items(deduplicated)
@@ -28,15 +24,6 @@ class CatalogService:
     def _safe_fetch_tmdb(self, limit):
         try:
             return self.tmdb_client.fetch_trending(media_type="all", page=1)[:limit]
-        except ExternalAPIError:
-            return []
-
-    def _safe_fetch_tvdb(self, query, limit):
-        try:
-            query_value = query or "popular"
-            tv = self.tvdb_client.search(query=query_value, media_type="series", page=0)
-            movies = self.tvdb_client.search(query=query_value, media_type="movie", page=0)
-            return (tv + movies)[:limit]
         except ExternalAPIError:
             return []
 
@@ -69,6 +56,7 @@ class CatalogService:
         for item in items:
             imdb_id = item.get("imdb_id") or ""
             poster_url = item.get("poster_url", "")
+            trailer_url = ""
             try:
                 rpdb_poster = self.rpdb_client.poster_url(
                     media_type=item.get("media_type", MediaItem.TYPE_MOVIE),
@@ -79,6 +67,14 @@ class CatalogService:
                 poster_url = rpdb_poster or poster_url
             except ExternalAPIError:
                 pass
+            try:
+                trailer_url = self.youtube_client.find_trailer_url(
+                    title=item.get("title", ""),
+                    media_type=item.get("media_type", MediaItem.TYPE_MOVIE),
+                    release_year=item.get("release_year"),
+                )
+            except ExternalAPIError:
+                trailer_url = ""
 
             defaults = {
                 "title": item.get("title"),
@@ -89,6 +85,7 @@ class CatalogService:
                 "poster_url": poster_url,
                 "imdb_id": imdb_id,
                 "tvdb_id": item.get("tvdb_id") or None,
+                "youtube_trailer_url": trailer_url,
                 "external_payload": item.get("external_payload", {}),
                 "popularity": item.get("popularity") or 0.0,
             }

@@ -13,6 +13,7 @@ from swiperecommenderapp.clients.base_http import BaseAPIClient, ExternalAPIErro
 from swiperecommenderapp.clients.rpdb import RPDBClient
 from swiperecommenderapp.clients.tmdb import TMDBClient
 from swiperecommenderapp.clients.tvdb import TVDBClient
+from swiperecommenderapp.clients.youtube import YouTubeClient
 from swiperecommenderapp.models import MediaItem, UserSwipe
 from swiperecommenderapp.services.catalog import CatalogService
 from swiperecommenderapp.services.recommendations import RecommendationService
@@ -138,6 +139,32 @@ class CatalogServiceTest(TestCase):
         self.assertEqual(deduped[0]["popularity"], 90.0)
 
 
+class YouTubeClientTest(TestCase):
+    def test_choose_best_video_prefers_official_trailer_over_opening(self):
+        items = [
+            {
+                "id": {"videoId": "bad1"},
+                "snippet": {"title": "Doraemon Opening Latino", "description": "opening completo", "channelTitle": "Fans"},
+            },
+            {
+                "id": {"videoId": "good1"},
+                "snippet": {"title": "Doraemon Trailer Oficial", "description": "Teaser trailer", "channelTitle": "Toho"},
+            },
+        ]
+        selected = YouTubeClient._choose_best_video(items=items, title="Doraemon", release_year=None)
+        self.assertEqual((selected.get("id") or {}).get("videoId"), "good1")
+
+    def test_choose_best_video_returns_none_for_irrelevant_results(self):
+        items = [
+            {
+                "id": {"videoId": "bad1"},
+                "snippet": {"title": "Doraemon Episodio Completo", "description": "capitulo 1", "channelTitle": "Canal X"},
+            },
+        ]
+        selected = YouTubeClient._choose_best_video(items=items, title="Doraemon", release_year=None)
+        self.assertIsNone(selected)
+
+
 class RecommendationServiceTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="marta", password="test123456")
@@ -182,6 +209,14 @@ class RecommendationServiceTest(TestCase):
         candidate_tv = self.service.get_next_candidate(self.user, media_type=MediaItem.TYPE_TV)
         self.assertEqual(candidate_movie.media_type, MediaItem.TYPE_MOVIE)
         self.assertEqual(candidate_tv, tv_item)
+
+    @patch("swiperecommenderapp.services.recommendations.YouTubeClient.find_trailer_url")
+    def test_get_next_candidate_backfills_youtube_trailer_url(self, mock_find_trailer_url):
+        mock_find_trailer_url.return_value = "https://www.youtube.com/watch?v=testTrailerId"
+        candidate = self.service.get_next_candidate(self.user, media_type=MediaItem.TYPE_MOVIE)
+        self.assertEqual(candidate.youtube_trailer_url, "https://www.youtube.com/watch?v=testTrailerId")
+        candidate.refresh_from_db()
+        self.assertEqual(candidate.youtube_trailer_url, "https://www.youtube.com/watch?v=testTrailerId")
 
 
 class SwipeFlowViewTest(TestCase):

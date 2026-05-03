@@ -26,6 +26,7 @@ class MediaItem(models.Model):
     imdb_id = models.CharField(max_length=20, blank=True)
     tmdb_id = models.PositiveIntegerField(null=True, blank=True, unique=True)
     tvdb_id = models.CharField(max_length=32, null=True, blank=True, unique=True)
+    youtube_trailer_url = models.URLField(blank=True)
     external_payload = models.JSONField(default=dict, blank=True)
     popularity = models.FloatField(default=0.0)
     created_at = models.DateTimeField(auto_now_add=True)
